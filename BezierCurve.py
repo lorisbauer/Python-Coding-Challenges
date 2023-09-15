@@ -4,14 +4,17 @@ from pygame import gfxdraw
 from perlin_noise import PerlinNoise
 from itertools import chain
 import numpy as np
+from time import perf_counter
 p.init()
 
 SIZE = 800
-CELLS = 10
+CELLS = 20
+PATH_CELLS = 80
 UPSCALE_FACTOR = 10
 CELL_SIZE = SIZE // (CELLS * UPSCALE_FACTOR)
 FPS = 40
 RADIUS = 10
+ORIGIN_RADIUS = RADIUS + 5
 OCTAVES = 4
 SCREEN = p.display.set_mode((SIZE, SIZE))
 
@@ -64,7 +67,40 @@ class Point:
     def draw(self):
         draw_circle(SCREEN, self.color, self.pos, self.radius)
         if self.selected:
-            p.draw.circle(SCREEN, (255, 255, 255), self.pos, self.radius * 1.5, width=1)
+            p.draw.circle(SCREEN, (255, 0, 0), self.pos, self.radius * 1.5, width=2)
+
+
+class Square:
+    def __init__(self, pos: tuple[int, int], size: int):
+        self.pos = pos
+        self.size = size
+        self.x, self.y = self.pos
+        self.x_transl, self.y_transl = self.x * self.size, self.y * self.size
+        self.color = (0, 0, 0)
+        self.rect = p.Rect(self.x_transl, self.y_transl, self.size, self.size)
+
+    def draw(self) -> None:
+        p.draw.rect(SCREEN, self.color, self.rect)
+        draw_rect_outline(SCREEN, (255, 255, 255), self.rect)
+
+    def get_center(self) -> tuple:
+        return self.x_transl + self.size / 2, self.y_transl + self.size / 2
+
+    def circle_collision(self, point: tuple, radius: int) -> bool:
+        x, y = point
+        rect_center_x, rect_center_y = self.get_center()
+
+        distance_x = abs(x - rect_center_x)
+        distance_y = abs(y - rect_center_y)
+
+        if distance_x > (self.size / 2 + radius) or distance_y > (self.size / 2 + radius):
+            return False
+
+        if distance_x <= (self.size / 2) or distance_y <= (self.size / 2):
+            return True
+
+        corner_distance_sq = (distance_x - self.size / 2) ** 2 + (distance_y - self.size / 2) ** 2
+        return corner_distance_sq <= radius ** 2
 
 
 class Curve:
@@ -196,19 +232,21 @@ class Background:
 
 class Display:
     def __init__(self):
-        self.n = 100
+        self.n = 150
+        self.path_radius = 20
         self.max_points = 100
         self.points = self.set_start_points()
         self.curve = self.generate_curve()
         self.running = True
         self.selected = False
+        self.draw_path = False
         self.bg = Background(CELLS, CELLS, OCTAVES)
+        self.squares = [Square((i, j), SIZE // PATH_CELLS) for i in range(PATH_CELLS) for j in range(PATH_CELLS)]
 
     @staticmethod
     def set_start_points() -> list:
-        radius = RADIUS + 5
-        return [Point((SIZE // 4, SIZE // 2), (70, 140, 0), radius, True),
-                Point((3 * SIZE // 4, SIZE // 2), (0, 70, 140), radius, True)]
+        return [Point((SIZE // 4, SIZE // 2), (70, 140, 0), ORIGIN_RADIUS, True),
+                Point((3 * SIZE // 4, SIZE // 2), (0, 70, 140), ORIGIN_RADIUS, True)]
 
     def generate_curve(self) -> list:
         return Curve(self.points, self.n).get_curve()
@@ -226,13 +264,26 @@ class Display:
 
     def draw_curve(self) -> None:
         p.draw.aalines(SCREEN, (255, 255, 255), False, self.curve)
+
+    def draw_points(self):
         for point in self.points:
             point.draw()
 
+    def pathing(self):
+        for i, point in enumerate(self.curve):
+            if i not in [0, len(self.curve) - 1]:
+                for square in self.squares:
+                    if square.circle_collision(point, self.path_radius):
+                        square.draw()
+
     def draw(self) -> None:
-        SCREEN.fill((255, 255, 255))
+        SCREEN.fill((150, 150, 150))
         self.bg.draw_bg()
-        self.draw_curve()
+        if self.draw_path:
+            self.pathing()
+        else:
+            self.draw_curve()
+        self.draw_points()
         p.display.update()
 
     def main(self) -> None:
@@ -263,7 +314,8 @@ class Display:
                                 self.points.index(self.selected) not in [0, len(self.points) - 1]:
                             self.points.remove(self.selected)
                             self.selected = False
-
+                    elif event.key == p.K_TAB:
+                        self.draw_path = bool(int(self.draw_path) - 1)
             if self.selected is not False:
                 self.selected.move(mouse)
             self.draw()
