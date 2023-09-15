@@ -8,7 +8,7 @@ from time import perf_counter
 p.init()
 
 SIZE = 800
-CELLS = 20
+CELLS = 10
 PATH_CELLS = 80
 UPSCALE_FACTOR = 10
 CELL_SIZE = SIZE // (CELLS * UPSCALE_FACTOR)
@@ -17,6 +17,7 @@ RADIUS = 10
 ORIGIN_RADIUS = RADIUS + 5
 OCTAVES = 4
 SCREEN = p.display.set_mode((SIZE, SIZE))
+FONT = p.font.SysFont('timesnewroman', 30)
 
 
 def draw_rect_outline(screen: p.Surface, color: tuple[int, int, int] | p.Color, rect: p.Rect, width: int = 1) -> None:
@@ -81,7 +82,7 @@ class Square:
 
     def draw(self) -> None:
         p.draw.rect(SCREEN, self.color, self.rect)
-        draw_rect_outline(SCREEN, (255, 255, 255), self.rect)
+        draw_rect_outline(SCREEN, (200, 200, 200), self.rect)
 
     def get_center(self) -> tuple:
         return self.x_transl + self.size / 2, self.y_transl + self.size / 2
@@ -232,8 +233,8 @@ class Background:
 
 class Display:
     def __init__(self):
-        self.n = 150
-        self.path_radius = 20
+        self.n = 200
+        self.path_radius = 10
         self.max_points = 100
         self.points = self.set_start_points()
         self.curve = self.generate_curve()
@@ -270,11 +271,10 @@ class Display:
             point.draw()
 
     def pathing(self):
-        for i, point in enumerate(self.curve):
-            if i not in [0, len(self.curve) - 1]:
-                for square in self.squares:
-                    if square.circle_collision(point, self.path_radius):
-                        square.draw()
+        for point in self.curve:
+            for square in self.squares:
+                if square.circle_collision(point, self.path_radius):
+                    square.draw()
 
     def draw(self) -> None:
         SCREEN.fill((150, 150, 150))
@@ -284,7 +284,12 @@ class Display:
         else:
             self.draw_curve()
         self.draw_points()
+        self.draw_texts()
         p.display.update()
+
+    def draw_texts(self):
+        path_radius_text = FONT.render(f"Path Radius: {self.path_radius} (min. 1, max. 50)", True, (255, 255, 255))
+        SCREEN.blit(path_radius_text, (SIZE // 2 - path_radius_text.get_width() // 2, SIZE * 0.01))
 
     def main(self) -> None:
         clock = p.time.Clock()
@@ -316,6 +321,12 @@ class Display:
                             self.selected = False
                     elif event.key == p.K_TAB:
                         self.draw_path = bool(int(self.draw_path) - 1)
+                    elif event.key == p.K_UP:
+                        if self.path_radius < 50:
+                            self.path_radius += 1
+                    elif event.key == p.K_DOWN:
+                        if self.path_radius > 1:
+                            self.path_radius -= 1
             if self.selected is not False:
                 self.selected.move(mouse)
             self.draw()
