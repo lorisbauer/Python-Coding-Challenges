@@ -4,7 +4,6 @@ from pygame import gfxdraw
 from perlin_noise import PerlinNoise
 from itertools import chain
 import numpy as np
-from time import perf_counter
 p.init()
 
 SIZE = 800
@@ -261,7 +260,7 @@ class Display:
     def sort_points(self) -> None:
         anchor = self.points[0]
         self.points[1:len(self.points) - 1] =\
-            sorted(self.points[1:len(self.points) - 1], key=lambda x: dist(anchor.pos, x.pos))
+            sorted(self.points[1: len(self.points) - 1], key=lambda x: dist(anchor.pos, x.pos))
 
     def draw_curve(self) -> None:
         p.draw.aalines(SCREEN, (255, 255, 255), False, self.curve)
