@@ -1,6 +1,7 @@
 import pygame as p
 from pygame import gfxdraw
 import random
+from math import dist
 p.init()
 
 SIZE = 800
@@ -26,6 +27,19 @@ class Point:
         p.draw.circle(SCREEN, self.color, self.pos, RADIUS)
 
 
+class Circle:
+    def __init__(self, pos: tuple, radius: int):
+        self.pos = pos
+        self.x, self.y = self.pos
+        self.radius = radius
+
+    def contains(self, point: Point) -> bool:
+        return dist(self.pos, point.pos) < self.radius
+
+    def draw(self):
+        p.draw.circle(SCREEN, (0, 255, 0), self.pos, self.radius, 2)
+
+
 class Rectangle:
     def __init__(self, x: int, y: int, w: int, h: int):
         self.x, self.y, self.w, self.h = x, y, w, h
@@ -37,9 +51,26 @@ class Rectangle:
     def contains(self, point: Point):
         return self.x - self.w <= point.x <= self.x + self.w and self.y - self.h <= point.y <= self.y + self.h
 
-    def intersects(self, area):
+    def intersects_rect(self, area) -> bool:
         return not (area.x - area.w > self.x + self.w or area.x + area.w < self.x - self.w or
                     area.y - area.h > self.y + self.h or area.y + area.h < self.y - self.h)
+
+    def intersects_circle(self, area) -> bool:
+        x, y = area.pos
+        rect_center_x, rect_center_y = self.x, self.y
+        w, h = self.w * 2, self.h * 2
+
+        distance_x = abs(x - rect_center_x)
+        distance_y = abs(y - rect_center_y)
+
+        if distance_x > (w / 2 + area.radius) or distance_y > (h / 2 + area.radius):
+            return False
+
+        if distance_x <= (w / 2) or distance_y <= (h / 2):
+            return True
+
+        corner_distance_sq = (distance_x - w / 2) ** 2 + (distance_y - h / 2) ** 2
+        return corner_distance_sq <= area.radius ** 2
 
     def draw(self):
         draw_rect_outline(SCREEN, (0, 0, 0), self.rect)
@@ -84,12 +115,14 @@ class QuadTree:
             elif self.southeast.insert(point):
                 return True
 
-    def query(self, area: Rectangle, found: list):
-        if not self.boundary.intersects(area):
+    def query(self, area: Rectangle | Circle, found: list):
+        if type(area) == Rectangle and not self.boundary.intersects_rect(area) or \
+                type(area) == Circle and not self.boundary.intersects_circle(area):
             return
         else:
             for point in self.points:
-                if area.contains(point):
+                if type(area) == Rectangle and area.contains(point) \
+                        or type(area) == Circle and area.contains(point):
                     found.append(point)
             if self.divided:
                 self.northwest.query(area, found)
@@ -121,8 +154,10 @@ class Display:
 
     def test_qt(self):
         x, y = p.mouse.get_pos()
-        area = Rectangle(x, y, 100, 100)
-        draw_rect_outline(SCREEN, (0, 255, 0), area.rect)
+        # area = Rectangle(x, y, 100, 100)
+        # draw_rect_outline(SCREEN, (0, 255, 0), area.rect)
+        area = Circle((x, y), 100)
+        area.draw()
         points = self.qt.query(area, [])
         for point in points:
             p.draw.circle(SCREEN, (0, 255, 0), point.pos, RADIUS)
