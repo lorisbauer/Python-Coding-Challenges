@@ -1,7 +1,6 @@
 import pygame as p
 from copy import deepcopy
 from pygame.locals import *
-from pygame.gfxdraw import *
 
 def rotate(l):
     rotated = [[0 for _ in range(len(l))] for _ in range(len(l))]
