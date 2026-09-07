@@ -19,7 +19,7 @@ class KSBT:
         self.bt1 = list(zip(self.bt1_dmg, self.bt1_rallies))
         self.bt2 = list(zip(self.bt2_dmg, self.bt2_rallies))
 
-        self.fig, self.axes = plt.subplots(2, 2, figsize=(10, 8))
+        self.fig, self.axes = plt.subplots(2, 2, figsize=(14, 10))
 
     def damage_over_time(self):
         diff = [b1 - b2 for b1, b2 in zip(self.bt1_dmg, self.bt2_dmg)]
@@ -36,9 +36,12 @@ class KSBT:
         ax.legend()
 
     def rallies_over_time(self):
+        diff = [b1 - b2 for b1, b2 in zip(self.bt1_rallies, self.bt2_rallies)]
+
         ax = self.axes[0, 1]
         ax.plot(self.dates, self.bt1_rallies, label="BT1", linewidth=2, marker="o", markersize=4)
         ax.plot(self.dates, self.bt2_rallies, label="BT2", linewidth=2, marker="o", markersize=4)
+        ax.plot(self.dates, diff, label="Difference (BT1 - BT2)", linewidth=1, marker="o", markersize=2, linestyle="--")
         ax.set_title("Rallies over time")
         ax.set_xlabel("Date")
         ax.set_ylabel("Rallies")
