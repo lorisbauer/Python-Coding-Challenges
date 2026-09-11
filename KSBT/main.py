@@ -19,7 +19,7 @@ class KSBT:
         self.bt1 = list(zip(self.bt1_dmg, self.bt1_rallies))
         self.bt2 = list(zip(self.bt2_dmg, self.bt2_rallies))
 
-        self.fig, self.axes = plt.subplots(2, 2, figsize=(14, 10))
+        self.fig, self.axes = plt.subplots(2, 2, figsize=(12, 8))
 
     def damage_over_time(self):
         diff = [b1 - b2 for b1, b2 in zip(self.bt1_dmg, self.bt2_dmg)]
