@@ -8,7 +8,7 @@ MEMBERS_PER_RALLY = 15
 
 class KSBT:
     def __init__(self):
-        self.df = pd.read_csv("KSBT.csv", sep=";", encoding="utf-8")
+        self.df = pd.read_csv("KSBT_AUR.csv", sep=";", encoding="utf-8")
         self.dates = list(self.df["Date"])
 
         self.bt1_dmg = self.df["BT1 Damage (in millions)"]
