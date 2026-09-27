@@ -37,7 +37,7 @@ class KSBT:
         ax.set_title("Damage over time")
         ax.set_xlabel("Date")
         ax.set_ylabel("Damage (millions)")
-        ax.legend(loc="best")
+        ax.legend(loc="upper left")
 
     def rallies_over_time(self):
         diff = [b1 - b2 for b1, b2 in zip(self.bt1_rallies, self.bt2_rallies)]
@@ -49,7 +49,7 @@ class KSBT:
         ax.set_title("Rallies over time")
         ax.set_xlabel("Date")
         ax.set_ylabel("Rallies")
-        ax.legend(loc="best")
+        ax.legend(loc="upper left")
 
     def damage_per_rally(self):
         bt1_ratio = [dmg / rallies for dmg, rallies in self.bt1]
@@ -64,7 +64,7 @@ class KSBT:
         ax.set_title("Damage per rally")
         ax.set_xlabel("Date")
         ax.set_ylabel("Damage/rally (millions)")
-        ax.legend(loc="best")
+        ax.legend(loc="center left")
 
     def damage_per_member(self):
         bt1_ratio_mem = [dmg / rallies / MEMBERS_PER_RALLY for dmg, rallies in self.bt1]
@@ -79,7 +79,7 @@ class KSBT:
         ax.set_title("Damage per rally member")
         ax.set_xlabel("Date")
         ax.set_ylabel("Damage/rally/member (millions)")
-        ax.legend(loc="best")
+        ax.legend(loc="center left")
 
     def plot(self):
         self.damage_over_time()
