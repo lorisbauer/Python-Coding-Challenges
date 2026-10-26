@@ -4,10 +4,19 @@ from math import log, exp
 import json
 
 # APR
-# base_constants: [1.75, 1.975, 1.2625]
+# base_constants: [1.75, 1.95, 1]
 # (101): 0.25(A) + 0.15(A) + 0.15(R) + 0.5 * 0.4(R) = 1.75
-# (102): 0.25(A) + 0.3(R) + 0.15(P) + 0.5 * 0.4*(1 - 0.875)(A) + 0.5*0.5 = 1.975
-# (211): 0.5*0.875*(1 - 0.6)(P)
+# (102): 0.25(A) + 0.3(R) + 0.15(P) + + 0.5 * 0.5 = 1.95
+# (211): 1
+
+# Conditionals
+# (211): 0.5 * 0.875 * (1 - 0.4)(P)
+# (102): 0.5 * 0.4 * (1 - 0.875)(A)
+
+A = 0.4 * (1 - 0.875)
+B = 0.875 * (1 - 0.4)
+AB = (0.4 * 0.875) * 0.5
+NAB = (1 - 0.4) * (1 - 0.875)
 
 MAX_COUNT = 4
 LABELS = ("C", "A", "V")
@@ -27,8 +36,8 @@ def convert_combo(combo: Tuple[int, int, int]) -> Tuple[str, ...]:
 def compute_multiplier(constants, steps, counts):
     assert len(constants) == len(steps) == len(counts) == 3
     return ((constants[0] + steps[0] * counts[0]) *
-            (constants[1] + steps[1] * counts[1]) *
-            (constants[2] + 0.475 * steps[2] * min(counts[2], 1))) #0.475 = 1 - 0.875*(1 - 0.6)
+            ((constants[1] + 0.5 * A) + steps[1] * counts[1]) *
+            ((constants[2] + 0.5 * B) + (1 - B) * steps[2] * min(counts[2], 1)))
 
 def iterate_combinations():
     return [(i, j, MAX_COUNT - i - j)
