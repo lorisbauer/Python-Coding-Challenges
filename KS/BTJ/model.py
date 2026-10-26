@@ -1,8 +1,13 @@
-from math import prod
 from typing import Tuple
 from operator import itemgetter
 from math import log, exp
 import json
+
+# APR
+# base_constants: [1.75, 1.975, 1.2625]
+# (101): 0.25(A) + 0.15(A) + 0.15(R) + 0.5 * 0.4(R) = 1.75
+# (102): 0.25(A) + 0.3(R) + 0.15(P) + 0.5 * 0.4*(1 - 0.875)(A) + 0.5*0.5 = 1.975
+# (211): 0.5*0.875*(1 - 0.6)(P)
 
 MAX_COUNT = 4
 LABELS = ("C", "A", "V")
@@ -21,7 +26,9 @@ def convert_combo(combo: Tuple[int, int, int]) -> Tuple[str, ...]:
 
 def compute_multiplier(constants, steps, counts):
     assert len(constants) == len(steps) == len(counts) == 3
-    return prod(c + s * n for c, s, n in zip(constants, steps, counts))
+    return ((constants[0] + steps[0] * counts[0]) *
+            (constants[1] + steps[1] * counts[1]) *
+            (constants[2] + 0.475 * steps[2] * min(counts[2], 1))) #0.475 = 1 - 0.875*(1 - 0.6)
 
 def iterate_combinations():
     return [(i, j, MAX_COUNT - i - j)
@@ -65,7 +72,7 @@ if __name__ == "__main__":
     vals = list(errs.values())
     n = len(vals)
 
-    print(f"\nMean absolute error:   {sum(abs(e) for e in vals) / n:.2%}")
+    print(f"\nMean absolute error:     {sum(abs(e) for e in vals) / n:.2%}")
     print(f"Root mean squared error: {(sum(e * e for e in vals) / n) ** 0.5:.2%}")
     print(f"Max error:               {max(abs(e) for e in vals):.2%}")
 
