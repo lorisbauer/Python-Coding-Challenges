@@ -14,7 +14,7 @@ from itertools import product
 # (102): 0.5 * 0.4 * (1 - 0.875)(A)
 # (211): 0.5 * 0.875 * (1 - 0.4)(P)
 
-P1, P2 = 0.4, 0
+P1, P2 = 0.4, 0.875
 
 MAX_COUNT = 4
 LABELS = ("C", "A", "V")
