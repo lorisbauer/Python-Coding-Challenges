@@ -2,6 +2,7 @@ from typing import Tuple
 from operator import itemgetter
 from math import log, exp
 import json
+from itertools import product
 
 # APR
 # base_constants: [1.75, 1.95, 1]
@@ -13,11 +14,34 @@ import json
 # (102): 0.5 * 0.4 * (1 - 0.875)(A)
 # (211): 0.5 * 0.875 * (1 - 0.4)(P)
 
-A = 0.4 * (1 - 0.875)
-B = 0.875 * (1 - 0.4)
+P1, P2 = 0.4, 0
 
 MAX_COUNT = 4
 LABELS = ("C", "A", "V")
+
+class Models:
+    @staticmethod
+    def compute_multiplier_v1(constants, steps, counts):
+        assert len(constants) == len(steps) == len(counts) == 3
+        pr1 = P1 * (1 - P2)
+        pr2 = P2 * (1 - P1)
+        return ((constants[0] + steps[0] * counts[0]) *
+                ((constants[1] + 0.5 * pr1) + steps[1] * counts[1]) *
+                ((constants[2] + 0.5 * pr2) + (1 - pr2) * steps[2] * min(counts[2], 1)))
+
+    @staticmethod
+    def compute_multiplier_v2(constants, steps, counts):
+        total = 0.0
+        for e1, e2 in product((True, False), repeat=2):
+            p = (P1 if e1 else 1 - P1) * (P2 if e2 else 1 - P2)
+            a = e1 and not e2  # slot 1 bonus
+            b = e2 and not e1  # slot 2 bonus
+
+            f0 = constants[0] + steps[0] * counts[0]
+            f1 = constants[1] + 0.5 * a + steps[1] * counts[1]
+            f2 = constants[2] + 0.5 * b + ((1 - b) * steps[2] * min(counts[2], 1))
+            total += p * f0 * f1 * f2
+        return total
 
 def load_run(path):
     with open(path) as f:
@@ -31,12 +55,6 @@ def load_run(path):
 def convert_combo(combo: Tuple[int, int, int]) -> Tuple[str, ...]:
     return tuple(f"{c}{label}" for c, label in zip(combo, LABELS) if c != 0)
 
-def compute_multiplier(constants, steps, counts):
-    assert len(constants) == len(steps) == len(counts) == 3
-    return ((constants[0] + steps[0] * counts[0]) *
-            ((constants[1] + 0.5 * A) + steps[1] * counts[1]) *
-            ((constants[2] + 0.5 * B) + (1 - B) * steps[2] * min(counts[2], 1)))
-
 def iterate_combinations():
     return [(i, j, MAX_COUNT - i - j)
             for i in range(MAX_COUNT + 1)
@@ -44,7 +62,7 @@ def iterate_combinations():
 
 def find_max(constants, steps):
     scored = (
-        (convert_combo(combo), compute_multiplier(constants, steps, combo))
+        (convert_combo(combo), Models.compute_multiplier_v2(constants, steps, combo))
         for combo in iterate_combinations()
     )
     return dict(sorted(scored, key=itemgetter(1), reverse=True))
@@ -52,7 +70,7 @@ def find_max(constants, steps):
 def relative_errors(model, data):
     logs = {k: log(data[k] / model[k]) for k in data}
     log_s = sum(logs.values()) / len(logs)
-    return {k: exp(log_s - v) - 1 for k, v in logs.items()}  # s*model/measured - 1
+    return {k: exp(v - log_s) - 1 for k, v in logs.items()}  # s*model/measured - 1
 
 def print_ranking(model, tests=None):
     width = max(len(" ".join(k)) for k in model)
