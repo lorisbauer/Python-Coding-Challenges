@@ -70,9 +70,10 @@ def find_max(constants, steps):
 def relative_errors(model, data):
     logs = {k: log(data[k] / model[k]) for k in data}
     log_s = sum(logs.values()) / len(logs)
-    return {k: exp(v - log_s) - 1 for k, v in logs.items()}  # s*model/measured - 1
+    s = exp(log_s)
+    return s, {k: exp(v - log_s) - 1 for k, v in logs.items()}  # s*model/measured - 1
 
-def print_ranking(model, tests=None):
+def print_ranking(model, tests=None, errs=None):
     width = max(len(" ".join(k)) for k in model)
     measured_rank = {}
     if tests:
@@ -84,12 +85,14 @@ def print_ranking(model, tests=None):
         line = f"{rank:>2}. {label:<{width}}  {value:7.3f}"
         if combo in measured_rank:
             line += f"  measured {tests[combo]:6.1f} ({measured_rank[combo]})"
+            if errs:
+                line += f"  {errs[combo]:+6.2%}"
         print(line)
 
 if __name__ == "__main__":
     run = load_run("Data/set_1.json")
     model = find_max(run["base_constants"], run["steps"])
-    errs = relative_errors(model, run["data"])
+    s, errs = relative_errors(model, run["data"])
 
     for k, e in sorted(errs.items(), key=lambda kv: abs(kv[1]), reverse=True):
         print(f"{k}: {e:+.2%}")
@@ -99,9 +102,11 @@ if __name__ == "__main__":
 
     print(f"\nMean absolute error:     {sum(abs(e) for e in vals) / n:.2%}")
     print(f"Root mean squared error: {(sum(e * e for e in vals) / n) ** 0.5:.2%}")
+    print(f"Mean relative error:     {sum(vals) / n:.2%}")
+    print(f"Scale s:                 {s:.3f}")
     print(f"Max error:               {max(abs(e) for e in vals):.2%}")
 
     print("--------------------")
     print(f"Number of data: {len(run["data"])}, Number of combinations: {len(iterate_combinations())}")
     print("Ranking:")
-    print_ranking(find_max(run["base_constants"], run["steps"]), run["data"])
+    print_ranking(model, run["data"], errs)
