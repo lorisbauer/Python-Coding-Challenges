@@ -363,7 +363,6 @@ if __name__ == '__main__':
     import time
     start_time = time.time()
     from collections import Counter
-    import copy
     import pygame as p
     from Setup import *
     from MLB import MoveLogBlack
